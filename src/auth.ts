@@ -7,7 +7,9 @@ import {
   isOidcConfigured,
 } from "@/lib/auth-status";
 
-const providers: Provider[] = isOidcConfigured()
+const oidcConfigured = isOidcConfigured();
+
+const providers: Provider[] = oidcConfigured
   ? [
       {
         id: "oidc",
@@ -27,7 +29,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     maxAge: 60 * 60 * 12,
   },
   trustHost: true,
-  secret: process.env.AUTH_SECRET,
+  // Auth.js validates every request before our proxy callback runs. It still
+  // requires a secret when OIDC is disabled, even though no session is used.
+  // This fallback is only reachable while there are no configured providers;
+  // a complete OIDC configuration always uses the deployment's AUTH_SECRET.
+  secret: oidcConfigured
+    ? process.env.AUTH_SECRET
+    : "firefly-iii-assistant-auth-disabled",
   pages: {
     signIn: "/login",
     error: "/login",
