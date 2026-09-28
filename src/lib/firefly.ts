@@ -142,7 +142,21 @@ async function fireflyFetch<T>(path: string): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`Firefly request failed: ${response.status} ${response.statusText}`);
+    const responseText = await response.text();
+    let detail = responseText;
+
+    try {
+      const body = JSON.parse(responseText) as { message?: unknown };
+      detail = typeof body.message === "string" ? body.message : responseText;
+    } catch {
+      // Firefly and reverse proxies may return plain text or HTML here.
+    }
+
+    const summary = detail.replace(/\s+/g, " ").trim().slice(0, 300);
+    const status = `${response.status} ${response.statusText}`.trim();
+    throw new Error(
+      `Firefly request failed: GET /api${path} -> ${status}${summary ? `: ${summary}` : ""}`,
+    );
   }
 
   return response.json() as Promise<T>;
@@ -334,35 +348,60 @@ function needsReview(split: FireflyTransactionSplit) {
   return !split.category_id || !split.tags || split.tags.length === 0;
 }
 
+function toTransactionSplit(group: FireflyTransactionGroup, split: FireflyTransactionSplit): TransactionSplit {
+  return {
+    transactionId: group.id,
+    splitId: split.transaction_journal_id,
+    description: split.description,
+    amount: Math.abs(Number.parseFloat(split.amount) || 0),
+    currencyCode: split.currency_code ?? "USD",
+    date: split.date.slice(0, 10),
+    sourceName: split.source_name ?? "Unknown",
+    destinationName: split.destination_name ?? "Unknown",
+    category: null,
+    tags: [],
+  };
+}
+
+async function fetchTransactionsNeedingReview(limit: number) {
+  const transactions: TransactionSplit[] = [];
+  let page = 1;
+  let totalPages = 1;
+
+  while (page <= totalPages && transactions.length < limit) {
+    const response = await fireflyFetch<FireflyList<FireflyTransactionGroup>>(
+      `/v1/transactions?limit=200&page=${page}`,
+    );
+
+    for (const group of response.data) {
+      for (const split of group.attributes.transactions) {
+        if (needsReview(split)) {
+          transactions.push(toTransactionSplit(group, split));
+        }
+
+        if (transactions.length === limit) {
+          return transactions;
+        }
+      }
+    }
+
+    totalPages = response.meta?.pagination?.total_pages ?? 1;
+    page += 1;
+  }
+
+  return transactions;
+}
+
 export async function getTransactionsNeedingReview(limit = 100): Promise<TransactionsOverview> {
   if (!getConfig()) {
     return getDemoTransactionsOverview();
   }
 
-  const [groups, categories, tags] = await Promise.all([
-    fetchAll<FireflyTransactionGroup>("/v1/transactions?limit=200"),
+  const [transactions, categories, tags] = await Promise.all([
+    fetchTransactionsNeedingReview(Math.max(0, limit)),
     fetchAll<FireflyCategory>("/v1/categories?limit=200"),
     fetchAll<FireflyTag>("/v1/tags?limit=200"),
   ]);
-
-  const transactions: TransactionSplit[] = groups
-    .flatMap((group) =>
-      group.attributes.transactions
-        .filter(needsReview)
-        .map((split) => ({
-          transactionId: group.id,
-          splitId: split.transaction_journal_id,
-          description: split.description,
-          amount: Math.abs(Number.parseFloat(split.amount) || 0),
-          currencyCode: split.currency_code ?? "USD",
-          date: split.date.slice(0, 10),
-          sourceName: split.source_name ?? "Unknown",
-          destinationName: split.destination_name ?? "Unknown",
-          category: null,
-          tags: [],
-        })),
-    )
-    .slice(0, limit);
 
   return {
     transactions,
