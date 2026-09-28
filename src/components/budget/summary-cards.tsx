@@ -19,31 +19,31 @@ export function BudgetSummaryCards({
   }).length;
   const cards = [
     {
-      label: "Monthly budget",
+      label: "Månadsbudget",
       value: formatCurrency(summary.totalBudget, currency),
       icon: Landmark,
       tone: "neutral",
     },
     {
-      label: "Spending",
+      label: "Utfall",
       value: formatCurrency(summary.totalSpending, currency),
       icon: WalletCards,
       tone: "neutral",
     },
     {
-      label: "Remaining",
+      label: "Kvar",
       value: formatCurrency(summary.remaining, currency),
       icon: PiggyBank,
       tone: summary.remaining < 0 ? "danger" : "good",
     },
     {
-      label: "Utilization",
+      label: "Nyttjandegrad",
       value: `${Math.round(summary.utilization * 100)}%`,
       icon: Gauge,
       tone: summary.utilization >= 1 ? "danger" : summary.utilization >= 0.8 ? "warning" : "good",
     },
     {
-      label: "Needs attention",
+      label: "Behöver granskas",
       value: `${attentionCount}`,
       icon: AlertTriangle,
       tone: attentionCount > 0 ? "warning" : "neutral",
@@ -78,12 +78,12 @@ export function BudgetSummaryCards({
       <div className="col-span-2 rounded-lg border border-slate-200 bg-white p-4 shadow-sm xl:col-span-1">
         <div className="flex items-center gap-2">
           <AlertTriangle className="size-4 text-rose-600" aria-hidden="true" />
-          <p className="text-sm font-medium text-slate-600">Largest overspends</p>
+          <p className="text-sm font-medium text-slate-600">Största överskridanden</p>
         </div>
         <div className="mt-3 space-y-2">
           {summary.overspends.length === 0 ? (
             <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
-              No categories over budget
+              Inga poster över budget
             </p>
           ) : (
             summary.overspends.map((item) => (

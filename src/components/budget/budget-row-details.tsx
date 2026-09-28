@@ -34,21 +34,21 @@ export function BudgetRowDetails({
 
   const facts = useMemo(
     () => [
-      { label: "Actual spending", value: formatCurrency(cell.actual, row.currencyCode) },
-      { label: "Remaining", value: formatCurrency(remaining, row.currencyCode), alert: remaining < 0 },
+      { label: "Faktiskt utfall", value: formatCurrency(cell.actual, row.currencyCode) },
+      { label: "Kvar", value: formatCurrency(remaining, row.currencyCode), alert: remaining < 0 },
       {
-        label: "Previous planned",
-        value: previous ? formatCurrency(previous.planned, row.currencyCode) : "No previous month",
+        label: "Föregående plan",
+        value: previous ? formatCurrency(previous.planned, row.currencyCode) : "Ingen föregående månad",
       },
       {
-        label: "Previous actual",
-        value: previous ? formatCurrency(previous.actual, row.currencyCode) : "No previous month",
+        label: "Föregående utfall",
+        value: previous ? formatCurrency(previous.actual, row.currencyCode) : "Ingen föregående månad",
       },
       {
-        label: "Next planned",
-        value: next ? formatCurrency(next.planned, row.currencyCode) : "No next month",
+        label: "Nästa plan",
+        value: next ? formatCurrency(next.planned, row.currencyCode) : "Ingen nästa månad",
       },
-      { label: "Used", value: `${Math.round(utilization * 100)}%` },
+      { label: "Använt", value: `${Math.round(utilization * 100)}%` },
     ],
     [cell.actual, next, previous, remaining, row.currencyCode, utilization],
   );
@@ -57,12 +57,12 @@ export function BudgetRowDetails({
     <div className="grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:p-4 xl:grid-cols-[minmax(240px,0.8fr)_1fr]">
       <div>
         <label className="text-xs font-semibold uppercase text-slate-500" htmlFor={`planned-${row.id}`}>
-          Planned amount
+          Planerat belopp
         </label>
         <div className="mt-2 flex gap-2">
           <input
             id={`planned-${row.id}`}
-            aria-label={`${row.name} planned amount`}
+            aria-label={`${row.name} planerat belopp`}
             className="h-11 min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-3 text-base font-semibold text-slate-950 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
             inputMode="decimal"
             value={cell.planned}
@@ -75,8 +75,8 @@ export function BudgetRowDetails({
               onClick={() => {
                 if (
                   confirmBudgetOverwrite(
-                    "Copy previous amount into this budget item?",
-                    `${row.name} will be replaced with the previous month's planned amount.`,
+                    "Kopiera föregående belopp till budgetposten?",
+                    `${row.name} ersätts med föregående månads planerade belopp.`,
                   )
                 ) {
                   onPlanChange(row.id, activeMonthKey, previous.planned);
@@ -84,7 +84,7 @@ export function BudgetRowDetails({
               }}
             >
               <Copy className="size-4" aria-hidden="true" />
-              Copy
+              Kopiera
             </button>
           ) : null}
         </div>
@@ -104,12 +104,12 @@ export function BudgetRowDetails({
         </div>
 
         <label className="mt-4 block text-xs font-semibold uppercase text-slate-500" htmlFor={`note-${row.id}`}>
-          Note
+          Anteckning
         </label>
         <textarea
           id={`note-${row.id}`}
           className="mt-2 min-h-20 w-full resize-y rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-          placeholder="Add context for this budget item"
+          placeholder="Lägg till en anteckning för budgetposten"
           value={note}
           onChange={(event) => setNote(event.target.value)}
         />

@@ -2,13 +2,13 @@ import type { BudgetHealth, BudgetOverview, BudgetRow, BudgetSummary } from "./b
 
 export function formatCurrency(value: number, currency = "USD") {
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("sv-SE", {
       style: "currency",
       currency,
       maximumFractionDigits: 0,
     }).format(value);
   } catch {
-    return `${currency} ${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value)}`;
+    return `${currency} ${new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 0 }).format(value)}`;
   }
 }
 

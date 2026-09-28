@@ -14,7 +14,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json(await saveBudgetLimit(body));
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to save budget limit" },
+      { error: error instanceof Error ? error.message : "Det gick inte att spara budgetgränsen" },
       { status: 500 },
     );
   }

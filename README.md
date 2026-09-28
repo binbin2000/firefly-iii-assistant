@@ -1,6 +1,6 @@
 # Firefly III Assistant
 
-A budgeting-first companion app for Firefly III. The first module is a fast monthly budget cockpit with a dashboard, sticky spreadsheet-style budget grid, inline editing, keyboard navigation, quick adjustments, and copy actions.
+A budgeting-first companion app for Firefly III. The budget module has simple views for the current month and next-month planning, plus a detailed cockpit with inline editing, annual planning, keyboard navigation, quick adjustments, and copy actions.
 
 ## Firefly III connection
 
@@ -11,7 +11,7 @@ FIREFLY_BASE_URL=https://firefly.example.com
 FIREFLY_ACCESS_TOKEN=your-personal-access-token
 ```
 
-Budget data is loaded through the server route at `/api/budgets/overview`. Planned budget edits are saved through `/api/budgets/limits`, which writes budget limits back to Firefly III.
+Budget data is loaded through the server routes at `/api/budgets/overview` and `/api/budgets/planning`. Planned budget edits are saved through `/api/budgets/limits`, while the next-month workflow uses `/api/budgets/plan` to write both budget limits and Firefly III available-budget amounts.
 
 ## Authentication (OIDC)
 
@@ -108,6 +108,16 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Testing
+
+The automated test suite uses Vitest, React Testing Library, and jsdom. Run it once with:
+
+```bash
+npm test
+```
+
+Use `npm run test:watch` while developing, or `npm run test:coverage` to enforce coverage thresholds and generate an HTML report in `coverage/`. Pull requests and pushes to the main development branches run tests, linting, and a production build in GitHub Actions.
 
 ## Learn More
 

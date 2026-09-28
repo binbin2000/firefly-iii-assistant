@@ -11,8 +11,8 @@ export function BudgetModeSwitcher({
   onModeChange: (mode: BudgetMode) => void;
 }) {
   const options = [
-    { value: "follow-up" as const, label: "Follow-up", icon: BarChart3 },
-    { value: "planning" as const, label: "Year planning", icon: CalendarRange },
+    { value: "follow-up" as const, label: "Uppföljning", icon: BarChart3 },
+    { value: "planning" as const, label: "Årsplanering", icon: CalendarRange },
   ];
 
   return (

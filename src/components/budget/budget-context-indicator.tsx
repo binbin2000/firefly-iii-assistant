@@ -23,7 +23,7 @@ export function BudgetContextIndicator({
   if (previousOver > 0) {
     return (
       <span className="text-sm font-medium text-rose-700">
-        Over by {formatCurrency(previousOver, row.currencyCode)} last month
+        Över med {formatCurrency(previousOver, row.currencyCode)} förra månaden
       </span>
     );
   }
@@ -32,22 +32,22 @@ export function BudgetContextIndicator({
     return (
       <span className={cn("text-sm font-medium", plannedDelta > 0 ? "text-slate-700" : "text-slate-500")}>
         {plannedDelta > 0 ? "+" : "-"}
-        {formatCurrency(Math.abs(plannedDelta), row.currencyCode)} vs last month
+        {formatCurrency(Math.abs(plannedDelta), row.currencyCode)} mot förra månaden
       </span>
     );
   }
 
   if (previous) {
-    return <span className="text-sm text-slate-500">Same as last month</span>;
+    return <span className="text-sm text-slate-500">Samma som förra månaden</span>;
   }
 
   if (next) {
     return (
       <span className="text-sm text-slate-500">
-        Next month planned: {formatCurrency(next.planned, row.currencyCode)}
+        Nästa månad: {formatCurrency(next.planned, row.currencyCode)}
       </span>
     );
   }
 
-  return <span className="text-sm text-slate-400">No context yet</span>;
+  return <span className="text-sm text-slate-400">Ingen jämförelse ännu</span>;
 }

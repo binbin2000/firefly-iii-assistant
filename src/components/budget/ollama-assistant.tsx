@@ -13,17 +13,17 @@ import type {
 import { cn } from "@/lib/utils";
 
 const focusOptions: Array<{ value: AnalysisFocus; label: string }> = [
-  { value: "overview", label: "Full review" },
-  { value: "budget", label: "Budget drafts" },
-  { value: "savings", label: "Savings ideas" },
+  { value: "overview", label: "Helhetsanalys" },
+  { value: "budget", label: "Budgetförslag" },
+  { value: "savings", label: "Spartips" },
 ];
 
 async function readError(response: Response) {
   try {
     const body = (await response.json()) as { error?: string };
-    return body.error || "The analysis failed.";
+    return body.error || "Analysen misslyckades.";
   } catch {
-    return "The analysis failed.";
+    return "Analysen misslyckades.";
   }
 }
 
@@ -69,7 +69,7 @@ export function OllamaAssistant({
             model: "Ollama",
             modelInstalled: false,
             installedModels: [],
-            message: statusError instanceof Error ? statusError.message : "Could not check Ollama.",
+            message: statusError instanceof Error ? statusError.message : "Det gick inte att kontrollera Ollama.",
           });
         }
       });
@@ -103,7 +103,7 @@ export function OllamaAssistant({
           : current,
       );
     } catch (analysisError) {
-      setError(analysisError instanceof Error ? analysisError.message : "The analysis failed.");
+      setError(analysisError instanceof Error ? analysisError.message : "Analysen misslyckades.");
     } finally {
       setIsLoading(false);
     }
@@ -115,8 +115,8 @@ export function OllamaAssistant({
     }
 
     const approved = confirmBudgetOverwrite(
-      `Apply Ollama draft for ${proposal.category}?`,
-      `Change ${monthLabel} from ${formatCurrency(proposal.currentPlanned, proposal.currencyCode)} to ${formatCurrency(
+      `Använd Ollamas förslag för ${proposal.category}?`,
+      `Ändra ${monthLabel} från ${formatCurrency(proposal.currentPlanned, proposal.currencyCode)} till ${formatCurrency(
         proposal.suggestedPlanned,
         proposal.currencyCode,
       )}.`,
@@ -141,7 +141,7 @@ export function OllamaAssistant({
           </span>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-base font-semibold text-slate-950">Local economy analyst</h2>
+              <h2 className="text-base font-semibold text-slate-950">Lokal ekonomianalys</h2>
               <span
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold",
@@ -158,11 +158,11 @@ export function OllamaAssistant({
                     status !== null && !isReady && "bg-amber-500",
                   )}
                 />
-                {status === null ? "Checking Ollama" : isReady ? status.model : "Setup required"}
+                {status === null ? "Kontrollerar Ollama" : isReady ? status.model : "Konfiguration krävs"}
               </span>
             </div>
             <p className="mt-1 max-w-3xl text-sm text-slate-600">
-              Analyze aggregated budget totals locally. Suggestions stay as drafts until you review and apply them.
+              Analysera aggregerade budgetbelopp lokalt. Förslag förblir utkast tills du granskar och använder dem.
             </p>
             {status?.message && !isReady ? (
               <p className="mt-2 font-mono text-xs font-medium text-amber-800">{status.message}</p>
@@ -192,14 +192,14 @@ export function OllamaAssistant({
       <div className="p-4">
         <div className="flex flex-col gap-2 md:flex-row">
           <label className="sr-only" htmlFor="ollama-question">
-            Optional question for the local model
+            Valfri fråga till den lokala modellen
           </label>
           <input
             id="ollama-question"
             className="h-10 min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
             value={question}
             maxLength={500}
-            placeholder={`Optional question about ${monthLabel} ${year}…`}
+            placeholder={`Valfri fråga om ${monthLabel} ${year}…`}
             onChange={(event) => setQuestion(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !isLoading) {
@@ -218,7 +218,7 @@ export function OllamaAssistant({
             ) : (
               <WandSparkles className="size-4" aria-hidden="true" />
             )}
-            {isLoading ? "Analyzing locally…" : "Analyze with Ollama"}
+            {isLoading ? "Analyserar lokalt…" : "Analysera med Ollama"}
           </button>
         </div>
 
@@ -232,7 +232,7 @@ export function OllamaAssistant({
         {result ? (
           <div className="mt-5 space-y-5" aria-live="polite">
             <div>
-              <p className="text-sm font-semibold text-slate-950">Analysis summary</p>
+              <p className="text-sm font-semibold text-slate-950">Sammanfattning</p>
               <p className="mt-1 text-sm leading-6 text-slate-600">{result.analysis.summary}</p>
               <p className="mt-1 text-xs text-slate-400">
                 {result.model} · {new Date(result.generatedAt).toLocaleString()}
@@ -260,17 +260,17 @@ export function OllamaAssistant({
 
             {result.analysis.budgetProposals.length > 0 ? (
               <div>
-                <h3 className="text-sm font-semibold text-slate-950">Budget drafts</h3>
-                <p className="mt-1 text-xs text-slate-500">Amounts apply to {monthLabel}. Review each draft individually.</p>
+                <h3 className="text-sm font-semibold text-slate-950">Budgetförslag</h3>
+                <p className="mt-1 text-xs text-slate-500">Beloppen gäller {monthLabel}. Granska varje förslag separat.</p>
                 <div className="mt-2 overflow-x-auto rounded-md border border-slate-200">
                   <table className="w-full min-w-[760px] text-left text-sm">
                     <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500">
                       <tr>
-                        <th className="px-3 py-2">Category</th>
-                        <th className="px-3 py-2 text-right">Current</th>
-                        <th className="px-3 py-2 text-right">Draft</th>
-                        <th className="px-3 py-2">Reason</th>
-                        <th className="px-3 py-2 text-right">Action</th>
+                        <th className="px-3 py-2">Budgetpost</th>
+                        <th className="px-3 py-2 text-right">Nuvarande</th>
+                        <th className="px-3 py-2 text-right">Förslag</th>
+                        <th className="px-3 py-2">Motivering</th>
+                        <th className="px-3 py-2 text-right">Åtgärd</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -283,7 +283,9 @@ export function OllamaAssistant({
                             <td className="px-3 py-3">
                               <p className="font-semibold text-slate-900">{proposal.category}</p>
                               <p className="mt-0.5 text-xs capitalize text-slate-500">
-                                {proposal.kind === "new_category" ? "New category draft" : `${proposal.confidence} confidence`}
+                                {proposal.kind === "new_category"
+                                  ? "Förslag på ny budgetpost"
+                                  : `${proposal.confidence === "high" ? "Hög" : proposal.confidence === "medium" ? "Medel" : "Låg"} säkerhet`}
                               </p>
                             </td>
                             <td className="px-3 py-3 text-right font-medium text-slate-600">
@@ -304,10 +306,10 @@ export function OllamaAssistant({
                                   disabled={wasApplied}
                                 >
                                   {wasApplied ? <Check className="size-3.5" aria-hidden="true" /> : null}
-                                  {wasApplied ? "Applied" : "Review & apply"}
+                                  {wasApplied ? "Använt" : "Granska och använd"}
                                 </button>
                               ) : (
-                                <span className="text-xs font-medium text-slate-500">Create manually</span>
+                                <span className="text-xs font-medium text-slate-500">Skapa manuellt</span>
                               )}
                             </td>
                           </tr>
@@ -321,7 +323,7 @@ export function OllamaAssistant({
 
             {result.analysis.savingsSuggestions.length > 0 ? (
               <div>
-                <h3 className="text-sm font-semibold text-slate-950">Savings ideas</h3>
+                <h3 className="text-sm font-semibold text-slate-950">Spartips</h3>
                 <div className="mt-2 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
                   {result.analysis.savingsSuggestions.map((suggestion, index) => (
                     <article key={`${suggestion.title}-${index}`} className="rounded-md border border-emerald-200 bg-emerald-50/50 p-3">
@@ -329,7 +331,7 @@ export function OllamaAssistant({
                         <div className="min-w-0">
                           <p className="font-semibold text-slate-900">{suggestion.title}</p>
                           <p className="mt-0.5 text-xs font-medium capitalize text-emerald-700">
-                            {suggestion.category} · {suggestion.effort} effort
+                            {suggestion.category} · {suggestion.effort === "high" ? "hög" : suggestion.effort === "medium" ? "medel" : "låg"} insats
                           </p>
                         </div>
                         <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-emerald-700">
@@ -346,7 +348,7 @@ export function OllamaAssistant({
 
             {result.analysis.caveats.length > 0 ? (
               <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                <p className="text-xs font-semibold uppercase text-slate-500">Limits of this analysis</p>
+                <p className="text-xs font-semibold uppercase text-slate-500">Analysens begränsningar</p>
                 <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-5 text-slate-500">
                   {result.analysis.caveats.map((caveat, index) => (
                     <li key={`${caveat}-${index}`}>{caveat}</li>

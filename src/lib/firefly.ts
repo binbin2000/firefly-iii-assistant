@@ -1,5 +1,5 @@
-import type { BudgetOverview, BudgetRow } from "./budget-types";
-import { getDemoBudgetOverview } from "./demo-budget-data";
+import type { AvailableBudget, BudgetOverview, BudgetRow } from "./budget-types";
+import { getDemoAvailableBudgets, getDemoBudgetOverview } from "./demo-budget-data";
 import { getDemoTransactionsOverview } from "./demo-transactions-data";
 import type { TransactionSplit, TransactionsOverview } from "./transaction-types";
 
@@ -36,6 +36,17 @@ type FireflyBudgetLimit = {
       currency_code?: string;
       currency_symbol?: string;
     }>;
+  };
+};
+
+type FireflyAvailableBudget = {
+  id: string;
+  attributes: {
+    amount: string;
+    start: string;
+    end: string;
+    currency_code: string;
+    currency_symbol?: string;
   };
 };
 
@@ -127,7 +138,7 @@ async function fireflyFetch<T>(path: string): Promise<T> {
       Accept: "application/json",
       Authorization: `Bearer ${config.token}`,
     },
-    next: { revalidate: 60 },
+    cache: "no-store",
   });
 
   if (!response.ok) {
@@ -164,11 +175,68 @@ function makeMonths(year: number) {
 
     return {
       key,
-      label: date.toLocaleString("en-US", { month: "short" }),
+      label: date.toLocaleString("sv-SE", { month: "short" }),
       start: `${key}-01`,
       end: monthEnd(year, index),
     };
   });
+}
+
+export async function getAvailableBudgets(start: string, end: string): Promise<AvailableBudget[]> {
+  if (!getConfig()) {
+    const [year, month] = start.split("-").map(Number);
+    return getDemoAvailableBudgets(year, month - 1);
+  }
+
+  const entries = await fetchAll<FireflyAvailableBudget>(
+    `/v1/available-budgets?start=${start}&end=${end}&limit=200`,
+  );
+  return entries
+    .filter((entry) => entry.attributes.start.slice(0, 10) <= end && entry.attributes.end.slice(0, 10) >= start)
+    .map((entry) => ({
+      id: entry.id,
+      amount: Number.parseFloat(entry.attributes.amount) || 0,
+      currencyCode: entry.attributes.currency_code,
+      currencySymbol: entry.attributes.currency_symbol ?? getCurrencySymbol(entry.attributes.currency_code),
+      start: entry.attributes.start.slice(0, 10),
+      end: entry.attributes.end.slice(0, 10),
+    }));
+}
+
+export async function saveAvailableBudget(input: {
+  id?: string;
+  amount: number;
+  currencyCode: string;
+  start: string;
+  end: string;
+}) {
+  const config = getConfig();
+  if (!config) {
+    return { source: "demo" as const };
+  }
+
+  const path = input.id
+    ? `/api/v1/available-budgets/${input.id}`
+    : "/api/v1/available-budgets";
+  const response = await fetch(`${config.baseUrl}${path}`, {
+    method: input.id ? "PUT" : "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${config.token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      amount: Math.max(0, input.amount).toFixed(2),
+      currency_code: input.currencyCode,
+      start: input.start,
+      end: input.end,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Det gick inte att spara budgetutrymmet: ${response.status} ${response.statusText}`);
+  }
+  return response.json();
 }
 
 export async function getBudgetOverview(year = new Date().getFullYear()): Promise<BudgetOverview> {

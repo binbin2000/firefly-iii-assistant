@@ -2,9 +2,9 @@ import type { BudgetHealth } from "@/lib/budget-types";
 import { cn } from "@/lib/utils";
 
 const labels: Record<BudgetHealth, string> = {
-  good: "On track",
-  warning: "Watch",
-  danger: "Over",
+  good: "I fas",
+  warning: "Bevaka",
+  danger: "Över",
 };
 
 export function BudgetStatusBadge({ health }: { health: BudgetHealth }) {
