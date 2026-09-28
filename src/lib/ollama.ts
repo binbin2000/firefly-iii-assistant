@@ -265,11 +265,16 @@ function normalizeCategorization(value: unknown, transactions: TransactionSplit[
     }));
 }
 
-function buildAnalysisData(overview: BudgetOverview, monthKey: string) {
+function buildAnalysisData(
+  overview: BudgetOverview,
+  monthKey: string,
+  planning?: { comparisonStrategy?: string; availableBudgets?: Record<string, number> },
+) {
   return {
     year: overview.year,
     selectedMonth: monthKey,
     source: overview.source,
+    planning,
     monthlyTotals: overview.months.map((month) => ({
       month: month.key,
       planned: overview.budgets.reduce((sum, budget) => sum + (budget.cells[month.key]?.planned ?? 0), 0),
@@ -383,9 +388,10 @@ export async function analyzeEconomy(input: {
   monthKey: string;
   focus: AnalysisFocus;
   question?: string;
+  planning?: { comparisonStrategy?: string; availableBudgets?: Record<string, number> };
 }): Promise<OllamaAnalysisResponse> {
   const config = getConfig();
-  const data = buildAnalysisData(input.overview, input.monthKey);
+  const data = buildAnalysisData(input.overview, input.monthKey, input.planning);
   const question = input.question?.trim().slice(0, 500);
   const response = await ollamaFetch("/api/chat", {
     method: "POST",
@@ -404,7 +410,7 @@ export async function analyzeEconomy(input: {
             "Base every conclusion on the supplied aggregates. Do not invent income, debt, account balances, or transactions.",
             "For an existing category, copy its exact id into budgetId. Use null only for a genuinely new category.",
             "Budget proposals are drafts for human review, not automatic financial decisions.",
-            "Use the same currency as the relevant category and return concise English text.",
+            "Use the same currency as the relevant category and return concise Swedish text.",
           ].join(" "),
         },
         {

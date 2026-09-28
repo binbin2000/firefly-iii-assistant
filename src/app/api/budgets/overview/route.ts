@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     return NextResponse.json(await getBudgetOverview(year));
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to load budget overview" },
+      { error: error instanceof Error ? error.message : "Det gick inte att läsa budgetöversikten" },
       { status: 500 },
     );
   }

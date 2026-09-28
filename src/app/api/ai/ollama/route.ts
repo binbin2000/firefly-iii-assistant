@@ -15,6 +15,9 @@ export async function POST(request: Request) {
       monthKey?: unknown;
       focus?: unknown;
       question?: unknown;
+      comparisonStrategy?: unknown;
+      draftLimits?: unknown;
+      availableBudgets?: unknown;
     };
     const year = typeof body.year === "number" ? body.year : Number.NaN;
     const focus = focuses.includes(body.focus as AnalysisFocus)
@@ -30,6 +33,15 @@ export async function POST(request: Request) {
     const monthKey = overview.months.some((month) => month.key === requestedMonthKey)
       ? requestedMonthKey
       : overview.activeMonthKey;
+    if (body.draftLimits && typeof body.draftLimits === "object" && !Array.isArray(body.draftLimits)) {
+      const draftLimits = body.draftLimits as Record<string, unknown>;
+      overview.budgets.forEach((budget) => {
+        const amount = draftLimits[budget.id];
+        if (typeof amount === "number" && Number.isFinite(amount) && amount >= 0) {
+          budget.cells[monthKey] = { ...budget.cells[monthKey], planned: amount };
+        }
+      });
+    }
 
     return Response.json(
       await analyzeEconomy({
@@ -37,6 +49,13 @@ export async function POST(request: Request) {
         monthKey,
         focus,
         question: typeof body.question === "string" ? body.question : undefined,
+        planning: {
+          comparisonStrategy: typeof body.comparisonStrategy === "string" ? body.comparisonStrategy : undefined,
+          availableBudgets:
+            body.availableBudgets && typeof body.availableBudgets === "object" && !Array.isArray(body.availableBudgets)
+              ? Object.fromEntries(Object.entries(body.availableBudgets).filter((entry): entry is [string, number] => typeof entry[1] === "number" && Number.isFinite(entry[1])))
+              : undefined,
+        },
       }),
     );
   } catch (error) {

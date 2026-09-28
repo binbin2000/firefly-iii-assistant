@@ -84,7 +84,7 @@ export function YearPlanningTable({
     fetch(`/api/budgets/overview?year=${year - 1}`)
       .then((response) => {
         if (!response.ok) {
-          throw new Error("Unable to load previous year");
+          throw new Error("Det gick inte att läsa föregående år");
         }
 
         return response.json() as Promise<BudgetOverview>;
@@ -134,16 +134,16 @@ export function YearPlanningTable({
       return formatCurrency(value, currencyCode);
     }
 
-    return isLoading ? "Loading" : "Not set";
+    return isLoading ? "Laddar" : "Ej angivet";
   };
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-3 border-b border-slate-200 px-3 py-3 sm:px-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="min-w-0">
-          <h2 className="text-base font-semibold text-slate-950">Year planning</h2>
+          <h2 className="text-base font-semibold text-slate-950">Årsplanering</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Work one quarter at a time with annual totals for context.
+            Arbeta ett kvartal i taget med årstotaler som stöd.
           </p>
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:flex-wrap">
@@ -153,8 +153,8 @@ export function YearPlanningTable({
             onClick={() => {
               if (
                 confirmBudgetOverwrite(
-                  "Copy previous month into selected month?",
-                  "Every budget item in the selected month will be replaced with the previous month's planned amount.",
+                  "Kopiera föregående månad till vald månad?",
+                  "Alla budgetposter i den valda månaden ersätts med föregående månads planerade belopp.",
                 )
               ) {
                 onCopyPreviousMonth(activeMonthKey);
@@ -162,7 +162,7 @@ export function YearPlanningTable({
             }}
           >
             <ChevronLeft className="size-4" aria-hidden="true" />
-            Copy previous into selected month
+            Kopiera föregående månad
           </button>
           <button
             type="button"
@@ -170,8 +170,8 @@ export function YearPlanningTable({
             onClick={() => {
               if (
                 confirmBudgetOverwrite(
-                  "Copy selected month through the rest of the year?",
-                  "Future months for every budget item will be replaced with the selected month's planned amount.",
+                  "Kopiera vald månad till resten av året?",
+                  "Framtida månader ersätts med den valda månadens planerade belopp.",
                 )
               ) {
                 onCopyMonthToRestOfYear(activeMonthKey);
@@ -179,7 +179,7 @@ export function YearPlanningTable({
             }}
           >
             <ChevronsRight className="size-4" aria-hidden="true" />
-            Copy selected month through year
+            Kopiera till resten av året
           </button>
         </div>
       </div>
@@ -235,12 +235,12 @@ export function YearPlanningTable({
         <div className="grid gap-3 border-b border-slate-200 bg-slate-50 px-3 py-3 sm:px-4 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <p className="text-xs font-semibold uppercase text-slate-500">Selected budget</p>
+              <p className="text-xs font-semibold uppercase text-slate-500">Vald budgetpost</p>
               <p className="mt-1 truncate text-sm font-semibold text-slate-950">{selectedRow.name}</p>
             </div>
             <div>
               <label className="text-xs font-semibold uppercase text-slate-500" htmlFor="selected-planned">
-                {selectedMonth.label} planned
+                {selectedMonth.label} planerat
               </label>
               <input
                 id="selected-planned"
@@ -254,13 +254,13 @@ export function YearPlanningTable({
             </div>
             <div>
               <label className="text-xs font-semibold uppercase text-slate-500" htmlFor="annual-amount">
-                Annual amount
+                Årsbelopp
               </label>
               <input
                 id="annual-amount"
                 className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
                 inputMode="decimal"
-                placeholder="Distribute across months"
+                placeholder="Fördela över månaderna"
                 value={annualAmount}
                 onChange={(event) => setAnnualAmount(event.target.value)}
               />
@@ -273,8 +273,8 @@ export function YearPlanningTable({
               onClick={() => {
                 if (
                   confirmBudgetOverwrite(
-                    "Distribute annual amount across this budget item?",
-                    `All months for ${selectedRow.name} will be replaced with an equal share of the annual amount.`,
+                    "Fördela årsbeloppet över budgetposten?",
+                    `Alla månader för ${selectedRow.name} ersätts med en lika stor andel av årsbeloppet.`,
                   )
                 ) {
                   onDistributeAnnualAmount(selectedRow.id, Number(annualAmount) || 0);
@@ -282,7 +282,7 @@ export function YearPlanningTable({
               }}
             >
               <Sigma className="size-4" aria-hidden="true" />
-              Distribute
+              Fördela
             </button>
           </div>
         </div>
@@ -302,12 +302,12 @@ export function YearPlanningTable({
               <div>
                 <p className="text-sm font-semibold text-slate-950">{activeMonth.label}</p>
                 <p className="mt-1 text-xs font-medium text-slate-500">
-                  Budgeted {formatCurrency(activeMonthSummary.totalBudget, activeMonthSummary.currency)}
+                  Budgeterat {formatCurrency(activeMonthSummary.totalBudget, activeMonthSummary.currency)}
                 </p>
               </div>
               <div className="min-w-28">
                 <label className="sr-only" htmlFor={`mobile-available-${activeMonth.key}`}>
-                  {activeMonth.label} available amount
+                  {activeMonth.label} budgetutrymme
                 </label>
                 <input
                   id={`mobile-available-${activeMonth.key}`}
@@ -339,11 +339,11 @@ export function YearPlanningTable({
                     <p className="truncate text-xs font-medium text-slate-500">{row.group}</p>
                   </div>
                   <p className="shrink-0 text-right text-xs font-semibold text-slate-500">
-                    Year {formatCurrency(getAnnualPlanned(row), row.currencyCode)}
+                    År {formatCurrency(getAnnualPlanned(row), row.currencyCode)}
                   </p>
                 </div>
                 <label className="mt-3 block text-xs font-semibold uppercase text-slate-500" htmlFor={`plan-${row.id}`}>
-                  {activeMonth.label} planned
+                  {activeMonth.label} planerat
                 </label>
                 <input
                   id={`plan-${row.id}`}
@@ -354,7 +354,7 @@ export function YearPlanningTable({
                 />
                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-medium">
                   <p className="rounded-md bg-slate-50 px-2 py-2 text-slate-600">
-                    Actual{" "}
+                    Utfall{" "}
                     <span className="font-semibold text-slate-900">
                       {formatCurrency(cell.actual, row.currencyCode)}
                     </span>
@@ -365,7 +365,7 @@ export function YearPlanningTable({
                       remaining < 0 ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700",
                     )}
                   >
-                    Left <span className="font-semibold">{formatCurrency(remaining, row.currencyCode)}</span>
+                    Kvar <span className="font-semibold">{formatCurrency(remaining, row.currencyCode)}</span>
                   </p>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
@@ -376,8 +376,8 @@ export function YearPlanningTable({
                     onClick={() => {
                       if (
                         !confirmBudgetOverwrite(
-                          "Copy previous amount into this budget item?",
-                          `${row.name} for ${activeMonth.label} will be replaced with the previous month's planned amount.`,
+                          "Kopiera föregående belopp?",
+                          `${row.name} för ${activeMonth.label} ersätts med föregående månads planerade belopp.`,
                         )
                       ) {
                         return;
@@ -387,7 +387,7 @@ export function YearPlanningTable({
                     }}
                   >
                     <Copy className="size-4" aria-hidden="true" />
-                    Previous {renderCopyValue(previousAmount, row.currencyCode)}
+                    Föregående {renderCopyValue(previousAmount, row.currencyCode)}
                   </button>
                   <button
                     type="button"
@@ -396,8 +396,8 @@ export function YearPlanningTable({
                     onClick={() => {
                       if (
                         confirmBudgetOverwrite(
-                          "Copy last year's amount into this budget item?",
-                          `${row.name} for ${activeMonth.label} will be replaced with the same month's planned amount from last year.`,
+                          "Kopiera förra årets belopp?",
+                          `${row.name} för ${activeMonth.label} ersätts med samma månads planerade belopp från förra året.`,
                         )
                       ) {
                         onCopySameMonthLastYear(row.id, activeMonth.key);
@@ -405,7 +405,7 @@ export function YearPlanningTable({
                     }}
                   >
                     <Copy className="size-4" aria-hidden="true" />
-                    Last year {renderCopyValue(lastYearAmount, row.currencyCode, lastYearAmount === undefined)}
+                    Förra året {renderCopyValue(lastYearAmount, row.currencyCode, lastYearAmount === undefined)}
                   </button>
                 </div>
               </article>
@@ -450,13 +450,13 @@ export function YearPlanningTable({
                       </button>
                       <div className="grid gap-1">
                         <p className="text-xs font-medium text-slate-500">
-                          Budgeted{" "}
+                          Budgeterat{" "}
                           <span className="font-semibold text-slate-800">
                             {formatCurrency(summary.totalBudget, summary.currency)}
                           </span>
                         </p>
                         <label className="sr-only" htmlFor={`available-${month.key}`}>
-                          {month.label} available amount
+                          {month.label} budgetutrymme
                         </label>
                         <input
                           id={`available-${month.key}`}
@@ -482,8 +482,8 @@ export function YearPlanningTable({
                         >
                           {isOverAvailable ? <AlertTriangle className="size-3 shrink-0" aria-hidden="true" /> : null}
                           {isOverAvailable
-                            ? `${formatCurrency(Math.abs(remainingAvailable), summary.currency)} over`
-                            : `${formatCurrency(remainingAvailable, summary.currency)} left`}
+                            ? `${formatCurrency(Math.abs(remainingAvailable), summary.currency)} över`
+                            : `${formatCurrency(remainingAvailable, summary.currency)} kvar`}
                         </p>
                       </div>
                     </div>
@@ -491,7 +491,7 @@ export function YearPlanningTable({
                 );
               })}
               <th className="sticky top-0 z-20 w-44 border-b border-l border-slate-200 bg-white px-4 py-3 text-right text-sm font-semibold text-slate-600">
-                Year total
+                Årstotal
               </th>
             </tr>
           </thead>
@@ -533,12 +533,12 @@ export function YearPlanningTable({
                             {formatCurrency(cell.planned, row.currencyCode)}
                           </span>
                           <span className="mt-2 block text-xs text-slate-500">
-                            Actual {formatCurrency(cell.actual, row.currencyCode)}
+                            Utfall {formatCurrency(cell.actual, row.currencyCode)}
                           </span>
                           <span
                             className={cn("mt-1 block text-xs", remaining < 0 ? "text-rose-700" : "text-slate-500")}
                           >
-                            Left {formatCurrency(remaining, row.currencyCode)}
+                            Kvar {formatCurrency(remaining, row.currencyCode)}
                           </span>
                         </button>
 
@@ -551,8 +551,8 @@ export function YearPlanningTable({
                               onClick={() => {
                                 if (
                                   !confirmBudgetOverwrite(
-                                    "Copy previous amount into this budget item?",
-                                    `${row.name} for ${month.label} will be replaced with the previous month's planned amount.`,
+                                    "Kopiera föregående belopp?",
+                                    `${row.name} för ${month.label} ersätts med föregående månads planerade belopp.`,
                                   )
                                 ) {
                                   return;
@@ -563,7 +563,7 @@ export function YearPlanningTable({
                             >
                               <Copy className="size-3.5 shrink-0" aria-hidden="true" />
                               <span className="min-w-0 truncate">
-                                Previous {renderCopyValue(previousAmount, row.currencyCode)}
+                              Föregående {renderCopyValue(previousAmount, row.currencyCode)}
                               </span>
                             </button>
                             <button
@@ -573,8 +573,8 @@ export function YearPlanningTable({
                               onClick={() => {
                                 if (
                                   confirmBudgetOverwrite(
-                                    "Copy last year's amount into this budget item?",
-                                    `${row.name} for ${month.label} will be replaced with the same month's planned amount from last year.`,
+                                    "Kopiera förra årets belopp?",
+                                    `${row.name} för ${month.label} ersätts med samma månads planerade belopp från förra året.`,
                                   )
                                 ) {
                                   onCopySameMonthLastYear(row.id, month.key);
@@ -583,7 +583,7 @@ export function YearPlanningTable({
                             >
                               <Copy className="size-3.5 shrink-0" aria-hidden="true" />
                               <span className="min-w-0 truncate">
-                                Last year {renderCopyValue(lastYearAmount, row.currencyCode, lastYearAmount === undefined)}
+                                Förra året {renderCopyValue(lastYearAmount, row.currencyCode, lastYearAmount === undefined)}
                               </span>
                             </button>
                             <button
@@ -592,8 +592,8 @@ export function YearPlanningTable({
                               onClick={() => {
                                 if (
                                   !confirmBudgetOverwrite(
-                                    "Copy this amount through the rest of the year?",
-                                    `Future months for ${row.name} will be replaced with ${month.label}'s planned amount.`,
+                                    "Kopiera beloppet till resten av året?",
+                                    `Framtida månader för ${row.name} ersätts med ${month.label}s planerade belopp.`,
                                   )
                                 ) {
                                   return;
@@ -606,7 +606,7 @@ export function YearPlanningTable({
                             >
                               <ChevronsRight className="size-3.5 shrink-0" aria-hidden="true" />
                               <span className="min-w-0 truncate">
-                                Through year {formatCurrency(cell.planned, row.currencyCode)}
+                                Resten av året {formatCurrency(cell.planned, row.currencyCode)}
                               </span>
                             </button>
                           </div>
@@ -620,7 +620,7 @@ export function YearPlanningTable({
                     {formatCurrency(getAnnualPlanned(row), row.currencyCode)}
                   </p>
                   <p className="mt-2 text-xs font-medium text-slate-500">
-                    Actual {formatCurrency(getAnnualActual(row), row.currencyCode)}
+                    Utfall {formatCurrency(getAnnualActual(row), row.currencyCode)}
                   </p>
                   <p
                     className={cn(
@@ -630,7 +630,7 @@ export function YearPlanningTable({
                         : "text-slate-500",
                     )}
                   >
-                    Left {formatCurrency(getRemaining(getAnnualPlanned(row), getAnnualActual(row)), row.currencyCode)}
+                    Kvar {formatCurrency(getRemaining(getAnnualPlanned(row), getAnnualActual(row)), row.currencyCode)}
                   </p>
                 </td>
               </tr>

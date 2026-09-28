@@ -24,13 +24,13 @@ const sortableColumns: Array<{
   label: string;
   className?: string;
 }> = [
-  { key: "category", label: "Budget category" },
-  { key: "planned", label: "Planned", className: "justify-end text-right" },
-  { key: "actual", label: "Actual", className: "justify-end text-right" },
-  { key: "remaining", label: "Remaining", className: "justify-end text-right" },
-  { key: "used", label: "Used" },
+  { key: "category", label: "Budgetpost" },
+  { key: "planned", label: "Planerat", className: "justify-end text-right" },
+  { key: "actual", label: "Utfall", className: "justify-end text-right" },
+  { key: "remaining", label: "Kvar", className: "justify-end text-right" },
+  { key: "used", label: "Använt" },
   { key: "status", label: "Status" },
-  { key: "context", label: "Context" },
+  { key: "context", label: "Jämförelse" },
 ];
 
 function getContextLabel(row: BudgetRow, months: BudgetMonth[], activeMonthKey: string) {
@@ -128,7 +128,7 @@ function SortableHeader({
           isActive && "text-slate-950",
         )}
         onClick={() => onSortChange(column.key)}
-        aria-label={`Sort by ${column.label} ${isActive && sort.direction === "asc" ? "descending" : "ascending"}`}
+        aria-label={`Sortera efter ${column.label} ${isActive && sort.direction === "asc" ? "fallande" : "stigande"}`}
       >
         <span>{column.label}</span>
         <Icon className={cn("size-3.5", !isActive && "opacity-40")} aria-hidden="true" />
@@ -141,16 +141,18 @@ export function MonthlyFollowUpTable({
   rows,
   months,
   activeMonthKey,
+  focusedBudgetId,
   onPlanChange,
   onQuickAdjust,
 }: {
   rows: BudgetRow[];
   months: BudgetMonth[];
   activeMonthKey: string;
+  focusedBudgetId?: string | null;
   onPlanChange: (budgetId: string, monthKey: string, value: number) => void;
   onQuickAdjust: (budgetId: string, monthKey: string, delta: number) => void;
 }) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(focusedBudgetId ?? null);
   const [sort, setSort] = useState<SortState>({ key: "status", direction: "asc" });
   const activeMonth = months.find((month) => month.key === activeMonthKey) ?? months[0];
   const sortedRows = useMemo(() => [...rows].sort((a, b) => compareRows(a, b, months, activeMonthKey, sort)), [
@@ -170,9 +172,9 @@ export function MonthlyFollowUpTable({
   return (
     <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 px-3 py-3 sm:px-4">
-        <h2 className="text-base font-semibold text-slate-950">{activeMonth.label} follow-up</h2>
+        <h2 className="text-base font-semibold text-slate-950">Uppföljning för {activeMonth.label}</h2>
         <p className="mt-1 text-sm text-slate-500">
-          Scan remaining money, utilization, and categories that need attention.
+          Granska återstående belopp, nyttjandegrad och poster som behöver uppmärksamhet.
         </p>
       </div>
 
@@ -183,7 +185,7 @@ export function MonthlyFollowUpTable({
               {sortableColumns.map((column) => (
                 <SortableHeader key={column.key} column={column} sort={sort} onSortChange={changeSort} />
               ))}
-              <th className="border-b border-slate-200 px-4 py-3 text-right">Actions</th>
+              <th className="border-b border-slate-200 px-4 py-3 text-right">Åtgärder</th>
             </tr>
           </thead>
           <tbody>
@@ -261,7 +263,7 @@ export function MonthlyFollowUpTable({
                         type="button"
                         className="h-8 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
                       >
-                        {isExpanded ? "Close" : "Review"}
+                        {isExpanded ? "Stäng" : "Granska"}
                       </button>
                     </td>
                   </tr>

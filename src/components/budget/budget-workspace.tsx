@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useMemo, useState, useTransition } from "react";
-import { CalendarDays, CircleDot, Redo2, RefreshCcw, Undo2 } from "lucide-react";
+import { CalendarClock, CalendarDays, CircleDot, ListTree, Redo2, RefreshCcw, Undo2, WalletCards } from "lucide-react";
 import { AppNav } from "@/components/app-nav";
-import type { BudgetOverview } from "@/lib/budget-types";
+import type { BudgetOverview, PlanningContext } from "@/lib/budget-types";
 import { cloneOverview } from "@/lib/budget-math";
 import type { BudgetProposal } from "@/lib/ollama-types";
 import { BudgetModeSwitcher, type BudgetMode } from "./budget-mode-switcher";
@@ -11,6 +11,8 @@ import { MonthlyFollowUpTable } from "./monthly-follow-up-table";
 import { OllamaAssistant } from "./ollama-assistant";
 import { BudgetSummaryCards } from "./summary-cards";
 import { YearPlanningTable } from "./year-planning-table";
+import { CurrentMonthOverview } from "./current-month-overview";
+import { NextMonthPlanner } from "./next-month-planner";
 
 async function persistLimit(input: {
   budgetId: string;
@@ -63,15 +65,26 @@ function addUndoSnapshot(history: { past: BudgetOverview[]; future: BudgetOvervi
   };
 }
 
-export function BudgetCockpitPage({ initialOverview }: { initialOverview: BudgetOverview }) {
+type WorkspaceMode = "current" | "next" | "details";
+
+export function BudgetCockpitPage({
+  initialOverview,
+  initialPlanningContext,
+}: {
+  initialOverview: BudgetOverview;
+  initialPlanningContext: PlanningContext;
+}) {
   const [overview, setOverview] = useState(initialOverview);
+  const [planningContext, setPlanningContext] = useState(initialPlanningContext);
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("current");
+  const [focusedBudgetId, setFocusedBudgetId] = useState<string | null>(null);
   const [history, setHistory] = useState<{
     past: BudgetOverview[];
     future: BudgetOverview[];
   }>({ past: [], future: [] });
   const [activeMonthKey, setActiveMonthKey] = useState(initialOverview.activeMonthKey);
   const [mode, setMode] = useState<BudgetMode>("follow-up");
-  const [lastSaved, setLastSaved] = useState("Ready");
+  const [lastSaved, setLastSaved] = useState("Redo");
   const [isPending, startTransition] = useTransition();
   const currency = overview.budgets[0]?.currencyCode ?? "USD";
   const activeMonth = overview.months.find((month) => month.key === activeMonthKey) ?? overview.months[0];
@@ -112,7 +125,7 @@ export function BudgetCockpitPage({ initialOverview }: { initialOverview: Budget
     await Promise.all(updates);
   }, []);
 
-  const commitOverview = useCallback((next: BudgetOverview, status = "Saving") => {
+  const commitOverview = useCallback((next: BudgetOverview, status = "Sparar") => {
     setHistory((current) => addUndoSnapshot(current, overview));
     setOverview(next);
     setLastSaved(status);
@@ -138,13 +151,13 @@ export function BudgetCockpitPage({ initialOverview }: { initialOverview: Budget
 
     setOverview(targetSnapshot);
     setActiveMonthKey(targetSnapshot.months[activeMonthIndex]?.key ?? targetSnapshot.activeMonthKey);
-    setLastSaved(direction === "undo" ? "Undoing" : "Redoing");
+    setLastSaved(direction === "undo" ? "Ångrar" : "Gör om");
     startTransition(async () => {
       try {
         await persistOverviewDiff(currentSnapshot, targetSnapshot);
-        setLastSaved(direction === "undo" ? "Undone" : "Redone");
+        setLastSaved(direction === "undo" ? "Ångrat" : "Gjort om");
       } catch {
-        setLastSaved(direction === "undo" ? "Undo failed" : "Redo failed");
+        setLastSaved(direction === "undo" ? "Kunde inte ångra" : "Kunde inte göra om");
       }
     });
   }, [activeMonthIndex, overview, persistOverviewDiff]);
@@ -165,14 +178,14 @@ export function BudgetCockpitPage({ initialOverview }: { initialOverview: Budget
     }
   }, [history.future, restoreOverview]);
 
-  const loadOverview = useCallback((year: number, preferredMonthIndex = activeMonthIndex, successStatus = "Ready") => {
-    setLastSaved("Loading");
+  const loadOverview = useCallback((year: number, preferredMonthIndex = activeMonthIndex, successStatus = "Redo") => {
+    setLastSaved("Laddar");
     startTransition(async () => {
       try {
         const response = await fetch(`/api/budgets/overview?year=${year}`);
 
         if (!response.ok) {
-          throw new Error("Unable to load budget overview");
+          throw new Error("Det gick inte att läsa budgetöversikten");
         }
 
         const next = (await response.json()) as BudgetOverview;
@@ -181,7 +194,7 @@ export function BudgetCockpitPage({ initialOverview }: { initialOverview: Budget
         setActiveMonthKey(next.months[preferredMonthIndex]?.key ?? next.activeMonthKey);
         setLastSaved(successStatus);
       } catch {
-        setLastSaved("Load failed");
+        setLastSaved("Laddningen misslyckades");
       }
     });
   }, [activeMonthIndex]);
@@ -196,7 +209,7 @@ export function BudgetCockpitPage({ initialOverview }: { initialOverview: Budget
         return;
       }
 
-      setLastSaved("Saving");
+      setLastSaved("Sparar");
       startTransition(async () => {
         try {
           await persistLimit({
@@ -206,9 +219,9 @@ export function BudgetCockpitPage({ initialOverview }: { initialOverview: Budget
             start: month.start,
             end: month.end,
           });
-          setLastSaved("Saved");
+          setLastSaved("Sparat");
         } catch {
-          setLastSaved("Save failed");
+          setLastSaved("Sparandet misslyckades");
         }
       });
     },
@@ -335,13 +348,13 @@ export function BudgetCockpitPage({ initialOverview }: { initialOverview: Budget
         return;
       }
 
-      setLastSaved("Loading");
+      setLastSaved("Laddar");
       startTransition(async () => {
         try {
           const response = await fetch(`/api/budgets/overview?year=${overview.year - 1}`);
 
           if (!response.ok) {
-            throw new Error("Unable to load previous year");
+            throw new Error("Det gick inte att läsa föregående år");
           }
 
           const previousOverview = (await response.json()) as BudgetOverview;
@@ -350,7 +363,7 @@ export function BudgetCockpitPage({ initialOverview }: { initialOverview: Budget
           const sourceAmount = sourceBudget?.cells[previousMonthKey]?.planned;
 
           if (sourceAmount === undefined) {
-            setLastSaved("No prior amount");
+            setLastSaved("Inget tidigare belopp");
             return;
           }
 
@@ -373,9 +386,9 @@ export function BudgetCockpitPage({ initialOverview }: { initialOverview: Budget
             start: targetMonth.start,
             end: targetMonth.end,
           });
-          setLastSaved("Saved");
+          setLastSaved("Sparat");
         } catch {
-          setLastSaved("Copy failed");
+          setLastSaved("Kopieringen misslyckades");
         }
       });
     },
@@ -383,7 +396,7 @@ export function BudgetCockpitPage({ initialOverview }: { initialOverview: Budget
   );
 
   const refresh = useCallback(() => {
-    loadOverview(overview.year, activeMonthIndex, "Refreshed");
+    loadOverview(overview.year, activeMonthIndex, "Uppdaterat");
   }, [activeMonthIndex, loadOverview, overview.year]);
 
   const applyOllamaProposal = useCallback(
@@ -424,122 +437,69 @@ export function BudgetCockpitPage({ initialOverview }: { initialOverview: Budget
               <span className="truncate">Firefly III Assistant</span>
             </div>
             <h1 className="mt-2 text-xl font-semibold tracking-normal text-slate-950 sm:text-2xl">
-              Budget cockpit
+              Budgetöversikt
             </h1>
           </div>
-
-          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:justify-end">
-            <AppNav />
-            <div className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-600">
-              <CalendarDays className="size-4 shrink-0" aria-hidden="true" />
-              {activeMonth.label} {overview.year}
-            </div>
-            <label className="sr-only" htmlFor="budget-year">
-              Budget year
-            </label>
-            <select
-              id="budget-year"
-              className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition hover:bg-slate-50 focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-              value={overview.year}
-              onChange={(event) => loadOverview(Number(event.target.value), activeMonthIndex)}
-            >
-              {yearOptions.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-            <div className="min-w-0 rounded-md border border-slate-200 bg-white p-1">
-              <div className="flex max-w-full gap-1 overflow-x-auto overscroll-x-contain pb-1 sm:pb-0">
-                {monthOptions}
-              </div>
-            </div>
-            <button
-              type="button"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:justify-start"
-              onClick={refresh}
-            >
-              <RefreshCcw className="size-4" aria-hidden="true" />
-              Refresh
-            </button>
-          </div>
+          <AppNav />
         </header>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-500">
-          <span>
-            Source:{" "}
-            <span className="font-semibold text-slate-700">
-              {overview.source === "firefly" ? "Firefly III API" : "Demo data"}
-            </span>
-          </span>
-          <div className="flex items-center gap-2">
+        <nav className="grid grid-cols-1 gap-2 rounded-lg border border-slate-200 bg-white p-1 shadow-sm sm:grid-cols-3" aria-label="Budgetvyer">
+          {([
+            { value: "current" as const, label: "Denna månad", icon: WalletCards },
+            { value: "next" as const, label: "Nästa månad", icon: CalendarClock },
+            { value: "details" as const, label: "Detaljerad budget", icon: ListTree },
+          ]).map((option) => (
             <button
+              key={option.value}
               type="button"
-              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-              onClick={undo}
-              disabled={history.past.length === 0 || isPending}
-              title="Undo last budget change"
+              className={option.value === workspaceMode ? "inline-flex h-11 items-center justify-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white" : "inline-flex h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold text-slate-600 hover:bg-slate-50"}
+              onClick={() => setWorkspaceMode(option.value)}
             >
-              <Undo2 className="size-4" aria-hidden="true" />
-              Undo
+              <option.icon className="size-4" aria-hidden="true" />
+              {option.label}
             </button>
-            <button
-              type="button"
-              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-              onClick={redo}
-              disabled={history.future.length === 0 || isPending}
-              title="Redo last undone budget change"
-            >
-              <Redo2 className="size-4" aria-hidden="true" />
-              Redo
-            </button>
-            <span className="font-medium text-slate-600">{isPending ? "Working" : lastSaved}</span>
-          </div>
-        </div>
+          ))}
+        </nav>
 
-        <BudgetSummaryCards budgets={overview.budgets} monthKey={activeMonthKey} currency={currency} />
-        <OllamaAssistant
-          year={overview.year}
-          monthKey={activeMonthKey}
-          monthLabel={activeMonth.label}
-          onApplyProposal={applyOllamaProposal}
-        />
-        <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-950">
-              {mode === "follow-up" ? "Daily follow-up" : "Annual planning"}
-            </p>
-            <p className="mt-1 text-sm text-slate-500">
-              {mode === "follow-up"
-                ? "One selected month, sorted for fast review."
-                : "All months are visible for occasional year-level edits."}
-            </p>
-          </div>
-          <BudgetModeSwitcher mode={mode} onModeChange={setMode} />
-        </div>
+        {workspaceMode === "current" ? (
+          <CurrentMonthOverview snapshot={planningContext.current} onOpenDetails={(budgetId) => {
+            setFocusedBudgetId(budgetId);
+            setActiveMonthKey(planningContext.current.month.key);
+            setMode("follow-up");
+            setWorkspaceMode("details");
+          }} />
+        ) : null}
 
-        {mode === "follow-up" ? (
-          <MonthlyFollowUpTable
-            rows={overview.budgets}
-            months={overview.months}
-            activeMonthKey={activeMonthKey}
-            onPlanChange={changePlan}
-            onQuickAdjust={quickAdjust}
-          />
-        ) : (
-          <YearPlanningTable
-            rows={overview.budgets}
-            months={overview.months}
-            year={overview.year}
-            activeMonthKey={activeMonthKey}
-            onActiveMonthChange={setActiveMonthKey}
-            onPlanChange={changePlan}
-            onCopyPreviousMonth={copyPreviousMonth}
-            onCopyMonthToRestOfYear={copyMonthToRestOfYear}
-            onCopySameMonthLastYear={copySameMonthLastYear}
-            onDistributeAnnualAmount={distributeAnnualAmount}
-          />
-        )}
+        {workspaceMode === "next" ? <NextMonthPlanner context={planningContext} onContextChange={setPlanningContext} /> : null}
+
+        {workspaceMode === "details" ? <>
+          <div className="flex min-w-0 flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-600"><CalendarDays className="size-4" />{activeMonth.label} {overview.year}</div>
+            <label className="sr-only" htmlFor="budget-year">Budgetår</label>
+            <select id="budget-year" className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold" value={overview.year} onChange={(event) => loadOverview(Number(event.target.value), activeMonthIndex)}>{yearOptions.map((year) => <option key={year} value={year}>{year}</option>)}</select>
+            <div className="min-w-0 flex-1 rounded-md border border-slate-200 bg-white p-1"><div className="flex max-w-full gap-1 overflow-x-auto">{monthOptions}</div></div>
+            <button type="button" className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-semibold" onClick={refresh}><RefreshCcw className="size-4" />Uppdatera</button>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-500">
+            <span>Källa: <span className="font-semibold text-slate-700">{overview.source === "firefly" ? "Firefly III API" : "Demodata"}</span></span>
+            <div className="flex items-center gap-2">
+              <button type="button" className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 font-semibold disabled:opacity-50" onClick={undo} disabled={!history.past.length || isPending}><Undo2 className="size-4" />Ångra</button>
+              <button type="button" className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 font-semibold disabled:opacity-50" onClick={redo} disabled={!history.future.length || isPending}><Redo2 className="size-4" />Gör om</button>
+              <span>{isPending ? "Arbetar…" : lastSaved}</span>
+            </div>
+          </div>
+          <BudgetSummaryCards budgets={overview.budgets.filter((row) => row.currencyCode === currency)} monthKey={activeMonthKey} currency={currency} />
+          <OllamaAssistant year={overview.year} monthKey={activeMonthKey} monthLabel={activeMonth.label} onApplyProposal={applyOllamaProposal} />
+          <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div><p className="text-sm font-semibold">{mode === "follow-up" ? "Månadsuppföljning" : "Årsplanering"}</p><p className="mt-1 text-sm text-slate-500">{mode === "follow-up" ? "En vald månad, sorterad för snabb granskning." : "Alla månader för mer avancerad planering."}</p></div>
+            <BudgetModeSwitcher mode={mode} onModeChange={setMode} />
+          </div>
+          {mode === "follow-up" ? (
+            <MonthlyFollowUpTable rows={overview.budgets} months={overview.months} activeMonthKey={activeMonthKey} focusedBudgetId={focusedBudgetId} onPlanChange={changePlan} onQuickAdjust={quickAdjust} />
+          ) : (
+            <YearPlanningTable rows={overview.budgets} months={overview.months} year={overview.year} activeMonthKey={activeMonthKey} onActiveMonthChange={setActiveMonthKey} onPlanChange={changePlan} onCopyPreviousMonth={copyPreviousMonth} onCopyMonthToRestOfYear={copyMonthToRestOfYear} onCopySameMonthLastYear={copySameMonthLastYear} onDistributeAnnualAmount={distributeAnnualAmount} />
+          )}
+        </> : null}
       </div>
     </main>
   );
